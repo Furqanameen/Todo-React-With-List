@@ -1,94 +1,182 @@
 import React, { Component } from 'react';
-import TodoItems from "./TodoItems";
 
 export default class TodoApp extends Component{
   constructor(props){
     super(props);
-    this.initialState={
+    this.state={
+
       item: [],
-      name: '',
-      email:'',
-      phone:'',
+      title: '',
+      content: '',
+      selected:'',
     }
-    this.state=this.initialState;
-    this.HandelChange=this.HandelChange.bind(this);
-    this.addItem=this.addItem.bind(this);
-    this.FormClick=this.FormClick.bind(this);
-    this.deleteItem=this.deleteItem.bind(this);
+    this.fetchDate();
   }
-  addItem(e){
-    if (this._inputElement.value !=="") {
-      var newItem={
-        text: this._inputElement.value,
-        key: Date.now()
-      };
-      this.setState((prevState)=>{
-        return{
-          item: prevState.item.concat(newItem)
-        };
-      });
-      this._inputElement.value="";
 
-    }
-    console.log(this.state.item);
-
-    e.preventDefault();
+  fetchDate = () => {
+    fetch("http://192.168.100.79:3000/articals", {
+      method: 'GET',
+    })
+    .then((response) => response.json())
+    .then((responseText) => {
+      console.log(responseText);
+      this.setState({
+        item: responseText
+      })
+    })
+    .catch((error) => {
+      console.error(error);
+    });
   }
-  HandelChange(event){
-    const name=event.target.name;
+
+
+
+  HandelChangeTitle = (event) =>{
     const value=event.target.value;
     this.setState({
-
-      [name]: value
-
+      title: value
     })
-
-  }
-  FormClick(event){
-    event.preventDefault();
-    this.setState(this.initialState);
-    console.log(this.state);
   }
 
-deleteItem(key){
-  var filterItems=this.state.item.filter(function(items){
-    return (items.key !==key);
+  HandelChangeContent = (event) => {
+    const value=event.target.value;
+    this.setState({
+      content: value
+    })
+  }
+
+  formClick=()=>{
+     // event.preventDefault();
+     if(this.state.selected !==""){
+       this.updateItems(this.state.selected)
+
+     }else {
+
+
+    fetch("http://192.168.100.79:3000/articals?title="+this.state.title+"&content="+this.state.content, {
+      method: 'POST',
+      body: JSON.stringify({
+       title:this.state.title,
+       content: this.state.content
+     })
+    })
+    .then(res => res.json())
+    .then((responseText) => {
+      this.setState({
+        title: "",
+        content: "",
+      });
+      console.log(responseText);
+      // this.state.item.push(responseText)
+
+      // alert(responseText);
+    })
+    .catch((error)=>{
+      console.error(error);
+    })
+   // .catckeyh(err => console.log(err);
+   }
+  }
+
+
+deleteItem = async(key) =>{
+  alert("Are you sure "+key);
+  console.log(this.state.key);
+  var arr =await this.state.item.filter(function(item) {
+     return item.id !== key
+  })
+  this.setState({item: arr})
+  fetch("http://192.168.100.79:3000/articals/"+key, {
+    method: 'DELETE',
+
+  })
+  .then((response) => response.json())
+  .then((responseText) => {
+
+  })
+  .catch((error) => {
+    console.error(error);
   });
-  this.setState({
-    item: filterItems
+}
+updateItems=(key)=>{
+  alert("Update item : "+key);
+  console.log(this.state.key);
+  fetch("http://192.168.100.79:3000/articals/"+key+"?title="+this.state.title+"&content="+this.state.content, {
+    method: 'PUT',
+  })
+  .then((response) => response.json())
+  .then((responseText) => {
+    console.log(responseText);
+
+  })
+  .catch((error) => {
+    console.error(error);
   });
+
+}
+updateForm=(key)=>{
+  alert("this is update");
+   this.setState({
+      title: key.title,
+      content: key.content,
+      selected: key.id,
+
+   })
+
+}
+createTask=(items)=>{
+  return(
+
+    <tr key={items.id} >
+        <th>{items.id}</th>
+        <th>{items.title}</th>
+        <th>{items.content}</th>
+      {/* <th><button type="button" class="btn btn-success">update</button></th> */}
+    <th><button onClick={()=>this.updateForm(items)} type="button" className="btn btn-success">Update</button></th>
+      <th><button onClick={()=>this.deleteItem(items.id)} type="button" className="btn btn-danger">Delete</button></th>
+    </tr>
+
+
+  )
 }
 
   render() {
+    var todoentries=this.state.item;
+    var listitem=todoentries.map(this.createTask);
     return(
+
       <div className="container">
 
-        <h1>this is ToDo Form</h1>
-        <form onSubmit={this.FormClick}>
+        <center> <h1>This is ToDo App</h1></center>
 
-        <div>
-        items:
-        <input type="" name="name" value={this.state.name} onChange={this.HandelChange}  />
-        </div>
-        <div>
-        email:
-        <input type="" name="email" value={this.state.email} onChange={this.HandelChange}  />
-        </div>
-        <div>
-        phone:
-        <input type="" name="phone" value={this.state.phone} onChange={this.HandelChange}  />
-        </div>
-        <button type="submit"> Add items</button>
-        </form>
-        <form onSubmit={this.addItem}>
+      <form onSubmit={this.formClick}>
+        <center>
           <div>
-            <input ref={(a)=>this._inputElement=a} placeholder="enter item name"/>
-        </div>
-        <div>
-          <button type="submit"> Add</button>
-        </div>
+            <input type="text" name="title" value={this.state.title} onChange={this.HandelChangeTitle} placeholder="enter item name"/>
+          </div><br />
+          <div>
+            <input type="text" name="content" value={this.state.content} onChange={this.HandelChangeContent} placeholder="enter item name"/>
+          </div><br />
+          <div>
+            <button type='submit'> Add</button>
+          </div><br />
+          </center>
         </form>
-        <TodoItems entries={this.state.item} delete={this.deleteItem} />
+        <div>
+          <div className="table-responsive">
+            <div className="table">
+              <tr>
+                <th>#ID</th>
+                <th>Title</th>
+                <th>Content</th>
+                <th >Update</th>
+                <th>Delete</th>
+              </tr>
+              {listitem}
+          </div>
+        </div>
+        </div>
+
       </div>
     )
   }
